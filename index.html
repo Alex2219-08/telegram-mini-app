@@ -6,19 +6,212 @@
     <title>Geometric Drawing</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        canvas { border: 1px solid black; width: 100%; height: 80vh; }
-        .controls { margin: 10px; }
+        body {
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 10px;
+            background: #f1f3f5;
+            border-radius: 10px;
+            justify-content: center;
+        }
+        label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #2c3e50;
+            margin-right: 5px;
+        }
+        input[type="number"], input[type="color"] {
+            padding: 8px;
+            border: 1px solid #dfe6e9;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input[type="number"] {
+            width: 70px;
+        }
+        input[type="number"]:focus, input[type="color"]:focus {
+            border-color: #0984e3;
+            box-shadow: 0 0 5px rgba(9, 132, 227, 0.5);
+            outline: none;
+        }
+        button {
+            padding: 10px 20px;
+            background: #0984e3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background: #0652dd;
+        }
+        button:active {
+            transform: scale(0.97);
+        }
+        .zoom {
+            width: 45px;
+            font-size: 18px;
+            background: #636e72;
+        }
+        .zoom:hover {
+            background: #2d3436;
+        }
+        canvas {
+            border: 2px solid #b2bec3;
+            background: #ffffff;
+            width: 100%;
+            height: 65vh;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            input[type="number"], button {
+                width: 100%;
+                max-width: 200px;
+            }
+            .toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <input id="width" type="number" placeholder="Ширина">
-        <input id="height" type="number" placeholder="Высота">
-        <button onclick="drawRectangle()">Нарисовать прямоугольник</button>
-        <button onclick="zoomIn()">+</button>
-        <button onclick="zoomOut()">-</button>
+    <div class="container">
+        <div class="header">Рисование фигур</div>
+        <div class="toolbar">
+            <button onclick="setShape('rect')">Прямоугольник</button>
+            <button onclick="setShape('circle')">Круг</button>
+        </div>
+        <div class="controls">
+            <div>
+                <label for="width">Ширина:</label>
+                <input id="width" type="number" placeholder="100">
+            </div>
+            <div>
+                <label for="height">Высота:</label>
+                <input id="height" type="number" placeholder="50">
+            </div>
+            <div>
+                <label for="color">Цвет:</label>
+                <input id="color" type="color" value="#000000">
+            </div>
+            <button onclick="drawShapes()">Нарисовать</button>
+            <button onclick="zoomIn()" class="zoom">+</button>
+            <button onclick="zoomOut()" class="zoom">-</button>
+        </div>
+        <canvas id="canvas"></canvas>
     </div>
-    <canvas id="canvas"></canvas>
-    <script src="script.js"></script>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let scale = 1;
+        let currentShape = 'rect';
+
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.65;
+
+        function drawGrid() {
+            ctx.strokeStyle = '#dfe6e9';
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x < canvas.width; x += 20) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 20) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawShapes() {
+            const width = parseInt(document.getElementById('width').value) || 100;
+            const height = parseInt(document.getElementById('height').value) || 50;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            ctx.save();
+            ctx.scale(scale, scale);
+            ctx.fillStyle = document.getElementById('color').value;
+            if (currentShape === 'rect') {
+                ctx.fillRect(50, 50, width, height);
+            } else if (currentShape === 'circle') {
+                ctx.beginPath();
+                ctx.arc(100, 100, width / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        function setShape(shape) {
+            currentShape = shape;
+            drawShapes();
+        }
+
+        function zoomIn() {
+            scale *= 1.2;
+            drawShapes();
+        }
+
+        function zoomOut() {
+            scale /= 1.2;
+            drawShapes();
+        }
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            scale += e.deltaY * -0.01;
+            scale = Math.min(Math.max(0.5, scale), 5);
+            drawShapes();
+        });
+
+        document.getElementById('color').addEventListener('change', drawShapes);
+        drawShapes();
+        window.Telegram.WebApp.ready();
+    </script>
 </body>
 </html>
