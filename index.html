@@ -89,13 +89,17 @@
         .zoom:hover {
             background: #2d3436;
         }
-        canvas {
+        svg {
             border: 2px solid #b2bec3;
             background: #ffffff;
             width: 100%;
             height: 65vh;
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .grid-line {
+            stroke: #dfe6e9;
+            stroke-width: 0.5;
         }
         @media (max-width: 600px) {
             .container {
@@ -141,50 +145,74 @@
             <button onclick="zoomIn()" class="zoom">+</button>
             <button onclick="zoomOut()" class="zoom">-</button>
         </div>
-        <canvas id="canvas"></canvas>
+        <svg id="svgCanvas"></svg>
     </div>
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+        const svg = document.getElementById('svgCanvas');
         let scale = 1;
         let currentShape = 'rect';
 
-        canvas.width = window.innerWidth * 0.9;
-        canvas.height = window.innerHeight * 0.65;
+        // Установка размеров SVG
+        svg.setAttribute('width', window.innerWidth * 0.9);
+        svg.setAttribute('height', window.innerHeight * 0.65);
 
+        // Создание группы для масштабирования
+        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group.setAttribute('id', 'shapeGroup');
+        svg.appendChild(group);
+
+        // Добавление сетки
         function drawGrid() {
-            ctx.strokeStyle = '#dfe6e9';
-            ctx.lineWidth = 0.5;
-            for (let x = 0; x < canvas.width; x += 20) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
+            const width = svg.getAttribute('width');
+            const height = svg.getAttribute('height');
+            for (let x = 0; x < width; x += 20) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', height);
+                line.setAttribute('class', 'grid-line');
+                svg.appendChild(line);
             }
-            for (let y = 0; y < canvas.height; y += 20) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
+            for (let y = 0; y < height; y += 20) {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', 0);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', width);
+                line.setAttribute('y2', y);
+                line.setAttribute('class', 'grid-line');
+                svg.appendChild(line);
             }
+            svg.appendChild(group); // Убедимся, что группа поверх сетки
         }
 
         function drawShapes() {
             const width = parseInt(document.getElementById('width').value) || 100;
             const height = parseInt(document.getElementById('height').value) || 50;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid();
-            ctx.save();
-            ctx.scale(scale, scale);
-            ctx.fillStyle = document.getElementById('color').value;
+            const color = document.getElementById('color').value;
+
+            // Очищаем группу перед добавлением новой фигуры
+            group.innerHTML = '';
+
+            // Создаём новую фигуру
+            let shape;
             if (currentShape === 'rect') {
-                ctx.fillRect(50, 50, width, height);
+                shape = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                shape.setAttribute('x', 50);
+                shape.setAttribute('y', 50);
+                shape.setAttribute('width', width);
+                shape.setAttribute('height', height);
             } else if (currentShape === 'circle') {
-                ctx.beginPath();
-                ctx.arc(100, 100, width / 2, 0, Math.PI * 2);
-                ctx.fill();
+                shape = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                shape.setAttribute('cx', 100);
+                shape.setAttribute('cy', 100);
+                shape.setAttribute('r', width / 2);
             }
-            ctx.restore();
+            shape.setAttribute('fill', color);
+            group.appendChild(shape);
+
+            // Применяем масштабирование
+            group.setAttribute('transform', `scale(${scale})`);
         }
 
         function setShape(shape) {
@@ -194,22 +222,25 @@
 
         function zoomIn() {
             scale *= 1.2;
-            drawShapes();
+            group.setAttribute('transform', `scale(${scale})`);
         }
 
         function zoomOut() {
             scale /= 1.2;
-            drawShapes();
+            group.setAttribute('transform', `scale(${scale})`);
         }
 
-        canvas.addEventListener('wheel', (e) => {
+        svg.addEventListener('wheel', (e) => {
             e.preventDefault();
             scale += e.deltaY * -0.01;
             scale = Math.min(Math.max(0.5, scale), 5);
-            drawShapes();
+            group.setAttribute('transform', `scale(${scale})`);
         });
 
         document.getElementById('color').addEventListener('change', drawShapes);
+
+        // Инициализация
+        drawGrid();
         drawShapes();
         window.Telegram.WebApp.ready();
     </script>
