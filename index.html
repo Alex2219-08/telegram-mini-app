@@ -101,6 +101,10 @@
             stroke: #dfe6e9;
             stroke-width: 0.5;
         }
+        svg rect:hover, svg circle:hover {
+            opacity: 1;
+            cursor: pointer;
+        }
         @media (max-width: 600px) {
             .container {
                 margin: 10px;
@@ -186,15 +190,14 @@
             svg.appendChild(group); // Убедимся, что группа поверх сетки
         }
 
+        // Новая функция drawShapes с улучшениями
         function drawShapes() {
             const width = parseInt(document.getElementById('width').value) || 100;
             const height = parseInt(document.getElementById('height').value) || 50;
             const color = document.getElementById('color').value;
 
-            // Очищаем группу перед добавлением новой фигуры
-            group.innerHTML = '';
+            group.innerHTML = ''; // Очищаем группу перед добавлением новой фигуры
 
-            // Создаём новую фигуру
             let shape;
             if (currentShape === 'rect') {
                 shape = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -202,16 +205,20 @@
                 shape.setAttribute('y', 50);
                 shape.setAttribute('width', width);
                 shape.setAttribute('height', height);
+                shape.setAttribute('stroke', '#2c3e50'); // Обводка
+                shape.setAttribute('stroke-width', '2');
             } else if (currentShape === 'circle') {
                 shape = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 shape.setAttribute('cx', 100);
                 shape.setAttribute('cy', 100);
                 shape.setAttribute('r', width / 2);
+                shape.setAttribute('stroke', '#2c3e50'); // Обводка
+                shape.setAttribute('stroke-width', '2');
             }
             shape.setAttribute('fill', color);
+            shape.setAttribute('opacity', '0.9'); // Прозрачность
             group.appendChild(shape);
 
-            // Применяем масштабирование
             group.setAttribute('transform', `scale(${scale})`);
         }
 
