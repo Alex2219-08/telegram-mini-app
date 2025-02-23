@@ -11,7 +11,6 @@
             margin: 0;
             font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
             color: #2c3e50;
-            overflow: hidden;
         }
         .container {
             max-width: 1000px;
@@ -175,16 +174,13 @@
         let startX = 0, startY = 0;
         let translateX = 0, translateY = 0;
 
-        // Установка размеров SVG
         svg.setAttribute('width', window.innerWidth * 0.9);
         svg.setAttribute('height', window.innerHeight * 0.65);
 
-        // Создание группы для масштабирования и перемещения
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         group.setAttribute('id', 'shapeGroup');
         svg.appendChild(group);
 
-        // Добавление сетки
         function drawGrid() {
             const width = svg.getAttribute('width');
             const height = svg.getAttribute('height');
@@ -206,10 +202,9 @@
                 line.setAttribute('class', 'grid-line');
                 svg.appendChild(line);
             }
-            svg.appendChild(group); // Группа поверх сетки
+            svg.appendChild(group);
         }
 
-        // Рисование фигур
         function drawShapes() {
             const width = parseInt(document.getElementById('width').value) || 100;
             const height = parseInt(document.getElementById('height').value) || 50;
@@ -262,7 +257,7 @@
 
         // Перетаскивание мышью (колесико)
         svg.addEventListener('mousedown', (e) => {
-            if (e.button === 1) { // Средняя кнопка (колесико)
+            if (e.button === 1) { // Средняя кнопка
                 isDragging = true;
                 startX = e.clientX - translateX;
                 startY = e.clientY - translateY;
@@ -286,12 +281,15 @@
             isDragging = false;
         });
 
-        // Масштабирование колесом
+        // Масштабирование колесом только с Ctrl
         svg.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            scale += e.deltaY * -0.01;
-            scale = Math.min(Math.max(0.5, scale), 5);
-            updateTransform();
+            if (e.ctrlKey) { // Только если зажат Ctrl
+                e.preventDefault();
+                scale += e.deltaY * -0.01;
+                scale = Math.min(Math.max(0.5, scale), 5);
+                updateTransform();
+            }
+            // Без Ctrl прокрутка страницы работает штатно
         });
 
         // Перетаскивание на смартфоне
@@ -318,7 +316,6 @@
 
         document.getElementById('color').addEventListener('change', drawShapes);
 
-        // Инициализация
         drawGrid();
         drawShapes();
         window.Telegram.WebApp.ready();
