@@ -7,102 +7,118 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #a1c4fd);
             margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            color: #333;
+            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+            color: #2c3e50;
+            overflow: hidden;
         }
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 20px auto;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 24px;
-            font-weight: 600;
-            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #e84393;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
         .toolbar {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 20px;
+            margin-bottom: 20px;
         }
         .controls {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            padding: 10px;
-            background: #f1f3f5;
-            border-radius: 10px;
+            gap: 20px;
+            padding: 15px;
+            background: linear-gradient(145deg, #dfe6e9, #ffffff);
+            border-radius: 15px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
             justify-content: center;
         }
         label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #2c3e50;
-            margin-right: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d3436;
+            margin-right: 8px;
         }
         input[type="number"], input[type="color"] {
-            padding: 8px;
-            border: 1px solid #dfe6e9;
-            border-radius: 6px;
-            font-size: 14px;
-            background: white;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            padding: 10px;
+            border: 2px solid #b2bec3;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #fff;
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
         }
         input[type="number"] {
-            width: 70px;
+            width: 80px;
         }
         input[type="number"]:focus, input[type="color"]:focus {
-            border-color: #0984e3;
-            box-shadow: 0 0 5px rgba(9, 132, 227, 0.5);
+            border-color: #ff6b6b;
+            box-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
+            transform: scale(1.05);
             outline: none;
         }
         button {
-            padding: 10px 20px;
-            background: #0984e3;
+            padding: 12px 25px;
+            background: linear-gradient(145deg, #ff6b6b, #e84393);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.3s, transform 0.2s;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         button:hover {
-            background: #0652dd;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
         button:active {
-            transform: scale(0.97);
+            transform: scale(0.95);
         }
         .zoom {
-            width: 45px;
-            font-size: 18px;
-            background: #636e72;
-        }
-        .zoom:hover {
-            background: #2d3436;
+            width: 50px;
+            font-size: 20px;
+            background: linear-gradient(145deg, #74b9ff, #0984e3);
         }
         svg {
-            border: 2px solid #b2bec3;
-            background: #ffffff;
+            border: 3px solid #dfe6e9;
+            background: #f9f9f9;
             width: 100%;
             height: 65vh;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+        }
+        svg:active {
+            cursor: grabbing;
         }
         .grid-line {
-            stroke: #dfe6e9;
-            stroke-width: 0.5;
+            stroke: #b2bec3;
+            stroke-width: 0.8;
+        }
+        svg rect, svg circle {
+            transition: opacity 0.3s, transform 0.2s;
         }
         svg rect:hover, svg circle:hover {
             opacity: 1;
+            transform: scale(1.05);
             cursor: pointer;
         }
         @media (max-width: 600px) {
@@ -116,11 +132,11 @@
             }
             input[type="number"], button {
                 width: 100%;
-                max-width: 200px;
+                max-width: 220px;
             }
             .toolbar {
                 flex-direction: column;
-                gap: 10px;
+                gap: 15px;
             }
         }
     </style>
@@ -143,7 +159,7 @@
             </div>
             <div>
                 <label for="color">Цвет:</label>
-                <input id="color" type="color" value="#000000">
+                <input id="color" type="color" value="#ff6b6b">
             </div>
             <button onclick="drawShapes()">Нарисовать</button>
             <button onclick="zoomIn()" class="zoom">+</button>
@@ -155,12 +171,15 @@
         const svg = document.getElementById('svgCanvas');
         let scale = 1;
         let currentShape = 'rect';
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let translateX = 0, translateY = 0;
 
         // Установка размеров SVG
         svg.setAttribute('width', window.innerWidth * 0.9);
         svg.setAttribute('height', window.innerHeight * 0.65);
 
-        // Создание группы для масштабирования
+        // Создание группы для масштабирования и перемещения
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         group.setAttribute('id', 'shapeGroup');
         svg.appendChild(group);
@@ -187,16 +206,16 @@
                 line.setAttribute('class', 'grid-line');
                 svg.appendChild(line);
             }
-            svg.appendChild(group); // Убедимся, что группа поверх сетки
+            svg.appendChild(group); // Группа поверх сетки
         }
 
-        // Новая функция drawShapes с улучшениями
+        // Рисование фигур
         function drawShapes() {
             const width = parseInt(document.getElementById('width').value) || 100;
             const height = parseInt(document.getElementById('height').value) || 50;
             const color = document.getElementById('color').value;
 
-            group.innerHTML = ''; // Очищаем группу перед добавлением новой фигуры
+            group.innerHTML = '';
 
             let shape;
             if (currentShape === 'rect') {
@@ -205,21 +224,21 @@
                 shape.setAttribute('y', 50);
                 shape.setAttribute('width', width);
                 shape.setAttribute('height', height);
-                shape.setAttribute('stroke', '#2c3e50'); // Обводка
-                shape.setAttribute('stroke-width', '2');
+                shape.setAttribute('stroke', '#2c3e50');
+                shape.setAttribute('stroke-width', '3');
             } else if (currentShape === 'circle') {
                 shape = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 shape.setAttribute('cx', 100);
                 shape.setAttribute('cy', 100);
                 shape.setAttribute('r', width / 2);
-                shape.setAttribute('stroke', '#2c3e50'); // Обводка
-                shape.setAttribute('stroke-width', '2');
+                shape.setAttribute('stroke', '#2c3e50');
+                shape.setAttribute('stroke-width', '3');
             }
             shape.setAttribute('fill', color);
-            shape.setAttribute('opacity', '0.9'); // Прозрачность
+            shape.setAttribute('opacity', '0.85');
             group.appendChild(shape);
 
-            group.setAttribute('transform', `scale(${scale})`);
+            updateTransform();
         }
 
         function setShape(shape) {
@@ -229,19 +248,72 @@
 
         function zoomIn() {
             scale *= 1.2;
-            group.setAttribute('transform', `scale(${scale})`);
+            updateTransform();
         }
 
         function zoomOut() {
             scale /= 1.2;
-            group.setAttribute('transform', `scale(${scale})`);
+            updateTransform();
         }
 
+        function updateTransform() {
+            group.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
+        }
+
+        // Перетаскивание мышью (колесико)
+        svg.addEventListener('mousedown', (e) => {
+            if (e.button === 1) { // Средняя кнопка (колесико)
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                e.preventDefault();
+            }
+        });
+
+        svg.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform();
+            }
+        });
+
+        svg.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        svg.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // Масштабирование колесом
         svg.addEventListener('wheel', (e) => {
             e.preventDefault();
             scale += e.deltaY * -0.01;
             scale = Math.min(Math.max(0.5, scale), 5);
-            group.setAttribute('transform', `scale(${scale})`);
+            updateTransform();
+        });
+
+        // Перетаскивание на смартфоне
+        svg.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - translateX;
+                startY = e.touches[0].clientY - translateY;
+            }
+        });
+
+        svg.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                translateX = e.touches[0].clientX - startX;
+                translateY = e.touches[0].clientY - startY;
+                updateTransform();
+                e.preventDefault();
+            }
+        });
+
+        svg.addEventListener('touchend', () => {
+            isDragging = false;
         });
 
         document.getElementById('color').addEventListener('change', drawShapes);
