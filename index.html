@@ -380,7 +380,7 @@
                     i += 2;
                     if (lines[i - 1] === 'LWPOLYLINE') {
                         while (i < lines.length && lines[i] !== '0') {
-                            if (lines[i] === '90') {
+                            if (lines[i] === '90') { // Количество вершин
                                 const vertexCount = parseInt(lines[i + 1]);
                                 i += 2;
                                 for (let v = 0; v < vertexCount && i < lines.length; v++) {
@@ -409,6 +409,7 @@
                             }
                             i++;
                         }
+                        i++; // Пропускаем SEQEND
                     }
                     if (shape.points.length > 0) currentBlock.shapes.push(shape);
                 }
@@ -440,17 +441,20 @@
                     }
                     if (blocks[insert.blockName]) {
                         blocks[insert.blockName].forEach(blockShape => {
-                            let shape = { ...blockShape, points: blockShape.points.map(p => {
-                                const [x, y] = p.split(',').map(Number);
-                                return `${x + insert.x},${y + insert.y}`;
-                            }).join(' ') };
+                            let shape = { 
+                                type: blockShape.type, 
+                                points: blockShape.points.map(p => {
+                                    const [x, y] = p.split(',').map(Number);
+                                    return `${x + insert.x},${y + insert.y}`;
+                                }).join(' ') 
+                            };
                             shapes.push(shape);
                         });
                     }
                 }
                 if (inEntities && lines[i] === '0' && lines[i + 1] === 'ENDSEC') {
                     inEntities = false;
-                    break;
+                    i++;
                 }
             }
             return shapes;
