@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geometric Drawing</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/dxf-parser@latest/dist/dxf-parser.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #a1c4fd);
@@ -331,30 +330,71 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 console.log('File loaded, content length:', e.target.result.length);
-                try {
-                    const parser = new DxfParser();
-                    const dxf = parser.parseSync(e.target.result);
-                    console.log('DXF parsed:', dxf);
-                    const shapes = dxf.entities.map(entity => {
-                        console.log('Entity found:', entity.type);
-                        if (entity.type === 'CIRCLE') {
-                            return { type: 'circle', cx: entity.center.x, cy: entity.center.y, r: entity.radius };
-                        } else if (entity.type === 'POLYLINE' || entity.type === 'LWPOLYLINE') {
-                            return { type: 'polygon', points: entity.vertices.map(v => `${v.x},${v.y}`).join(' ') };
-                        } else if (entity.type === 'LINE') {
-                            return { type: 'polygon', points: `${entity.start.x},${entity.start.y} ${entity.end.x},${entity.end.y}` };
-                        }
-                    }).filter(shape => shape);
-                    console.log('Shapes extracted:', shapes);
-                    integrateShapes(shapes);
-                } catch (error) {
-                    console.error('Error parsing DXF:', error);
-                }
+                const shapes = parseDXFManual(e.target.result);
+                console.log('Shapes extracted:', shapes);
+                integrateShapes(shapes);
             };
             reader.onerror = function() {
                 console.error('Error reading file');
             };
             reader.readAsText(file);
+        }
+
+        function parseDXFManual(dxfContent) {
+            const lines = dxfContent.split('\n').map(line => line.trim());
+            const shapes = [];
+            let currentShape = null;
+            let inEntities = false;
+
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i] === '2' && lines[i + 1] === 'ENTITIES') {
+                    inEntities = true;
+                    i++;
+                    continue;
+                }
+                if (!inEntities) continue;
+
+                if (lines[i] === '0' && lines[i + 1] === 'CIRCLE') {
+                    currentShape = { type: 'circle' };
+                    i += 2;
+                    while (i < lines.length && lines[i] !== '0') {
+                        if (lines[i] === '10') currentShape.cx = parseFloat(lines[i + 1]);
+                        if (lines[i] === '20') currentShape.cy = parseFloat(lines[i + 1]);
+                        if (lines[i] === '40') currentShape.r = parseFloat(lines[i + 1]);
+                        i++;
+                    }
+                    shapes.push(currentShape);
+                } else if (lines[i] === '0' && lines[i + 1] === 'POLYLINE') {
+                    currentShape = { type: 'polygon', points: [] };
+                    i += 2;
+                    while (i < lines.length && !(lines[i] === '0' && lines[i + 1] === 'SEQEND')) {
+                        if (lines[i] === '0' && lines[i + 1] === 'VERTEX') {
+                            let vertex = {};
+                            i += 2;
+                            while (i < lines.length && lines[i] !== '0') {
+                                if (lines[i] === '10') vertex.x = parseFloat(lines[i + 1]);
+                                if (lines[i] === '20') vertex.y = parseFloat(lines[i + 1]);
+                                i++;
+                            }
+                            currentShape.points.push(`${vertex.x},${vertex.y}`);
+                        }
+                        i++;
+                    }
+                    shapes.push({ type: 'polygon', points: currentShape.points.join(' ') });
+                } else if (lines[i] === '0' && lines[i + 1] === 'LINE') {
+                    currentShape = { type: 'polygon', points: [] };
+                    i += 2;
+                    while (i < lines.length && lines[i] !== '0') {
+                        if (lines[i] === '10') currentShape.points[0] = parseFloat(lines[i + 1]);
+                        if (lines[i] === '20') currentShape.points[1] = parseFloat(lines[i + 1]);
+                        if (lines[i] === '11') currentShape.points[2] = parseFloat(lines[i + 1]);
+                        if (lines[i] === '21') currentShape.points[3] = parseFloat(lines[i + 1]);
+                        i++;
+                    }
+                    shapes.push({ type: 'polygon', points: `${currentShape.points[0]},${currentShape.points[1]} ${currentShape.points[2]},${currentShape.points[3]}` });
+                }
+            }
+            return shapes;
         }
 
         function integrateShapes(shapes) {
