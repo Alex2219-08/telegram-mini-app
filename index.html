@@ -237,6 +237,11 @@
             group.innerHTML = '';
 
             const shapeDef = shapeLibrary[currentShape];
+            if (!shapeDef || (!shapeDef.points && !shapeDef.cx && !shapeDef.x)) {
+                console.log('Invalid shape definition:', currentShape);
+                return;
+            }
+
             let shape = document.createElementNS('http://www.w3.org/2000/svg', shapeDef.type);
             if (shapeDef.type === 'rect') {
                 shape.setAttribute('x', shapeDef.x);
@@ -246,9 +251,14 @@
             } else if (shapeDef.type === 'circle') {
                 shape.setAttribute('cx', shapeDef.cx);
                 shape.setAttribute('cy', shapeDef.cy);
-                shape.setAttribute('r', width / 2);
+                shape.setAttribute('r', shapeDef.r || width / 2);
             } else if (shapeDef.type === 'polygon') {
-                shape.setAttribute('points', typeof shapeDef.points === 'function' ? shapeDef.points(width, height) : shapeDef.points);
+                const points = typeof shapeDef.points === 'function' ? shapeDef.points(width, height) : shapeDef.points;
+                if (!points || points.trim() === '') {
+                    console.log('No points for polygon:', currentShape);
+                    return;
+                }
+                shape.setAttribute('points', points);
             }
             shape.setAttribute('fill', color);
             shape.setAttribute('stroke', '#2c3e50');
@@ -343,34 +353,49 @@
         function parseDXFManual(dxfContent) {
             const lines = dxfContent.split('\n').map(line => line.trim());
             const shapes = [];
-            let currentShape = null;
+            const blocks = {};
+            let currentBlock = null;
+            let inBlocks = false;
             let inEntities = false;
 
             console.log('Starting DXF parsing...');
             for (let i = 0; i < lines.length; i++) {
-                if (lines[i] === '2' && lines[i + 1] === 'ENTITIES') {
-                    inEntities = true;
-                    console.log('Entities section found');
+                // Секция BLOCKS
+                if (lines[i] === '2' && lines[i + 1] === 'BLOCKS') {
+                    inBlocks = true;
+                    console.log('Blocks section found');
                     i++;
                     continue;
                 }
-                if (!inEntities) continue;
-
-                if (lines[i] === '0') {
-                    console.log('Entity type:', lines[i + 1]);
-                    if (lines[i + 1] === 'CIRCLE') {
-                        currentShape = { type: 'circle' };
-                        i += 2;
+                if (inBlocks && lines[i] === '0' && lines[i + 1] === 'BLOCK') {
+                    currentBlock = { name: '', shapes: [] };
+                    i += 2;
+                    while (i < lines.length && lines[i] !== '0') {
+                        if (lines[i] === '2') currentBlock.name = lines[i + 1];
+                        i++;
+                    }
+                }
+                if (inBlocks && lines[i] === '0' && (lines[i + 1] === 'LWPOLYLINE' || lines[i + 1] === 'POLYLINE')) {
+                    let shape = { type: 'polygon', points: [] };
+                    i += 2;
+                    if (lines[i - 1] === 'LWPOLYLINE') {
                         while (i < lines.length && lines[i] !== '0') {
-                            if (lines[i] === '10') currentShape.cx = parseFloat(lines[i + 1]);
-                            if (lines[i] === '20') currentShape.cy = parseFloat(lines[i + 1]);
-                            if (lines[i] === '40') currentShape.r = parseFloat(lines[i + 1]);
+                            if (lines[i] === '90') {
+                                const vertexCount = parseInt(lines[i + 1]);
+                                i += 2;
+                                for (let v = 0; v < vertexCount && i < lines.length; v++) {
+                                    let x = 0, y = 0;
+                                    while (i < lines.length && lines[i] !== '0' && lines[i] !== '10') i++;
+                                    if (lines[i] === '10') x = parseFloat(lines[i + 1]);
+                                    i += 2;
+                                    if (lines[i] === '20') y = parseFloat(lines[i + 1]);
+                                    shape.points.push(`${x},${y}`);
+                                    i++;
+                                }
+                            }
                             i++;
                         }
-                        shapes.push(currentShape);
-                    } else if (lines[i + 1] === 'POLYLINE') {
-                        currentShape = { type: 'polygon', points: [] };
-                        i += 2;
+                    } else if (lines[i - 1] === 'POLYLINE') {
                         while (i < lines.length && !(lines[i] === '0' && lines[i + 1] === 'SEQEND')) {
                             if (lines[i] === '0' && lines[i + 1] === 'VERTEX') {
                                 let vertex = {};
@@ -380,43 +405,52 @@
                                     if (lines[i] === '20') vertex.y = parseFloat(lines[i + 1]);
                                     i++;
                                 }
-                                currentShape.points.push(`${vertex.x},${vertex.y}`);
+                                shape.points.push(`${vertex.x},${vertex.y}`);
                             }
                             i++;
                         }
-                        shapes.push({ type: 'polygon', points: currentShape.points.join(' ') });
-                    } else if (lines[i + 1] === 'LWPOLYLINE') {
-                        currentShape = { type: 'polygon', points: [] };
-                        i += 2;
-                        while (i < lines.length && lines[i] !== '0') {
-                            if (lines[i] === '90') { // Количество вершин
-                                const vertexCount = parseInt(lines[i + 1]);
-                                i += 2;
-                                for (let v = 0; v < vertexCount && i < lines.length; v++) {
-                                    let x = 0, y = 0;
-                                    while (i < lines.length && lines[i] !== '0' && lines[i] !== '10') i++;
-                                    if (lines[i] === '10') x = parseFloat(lines[i + 1]);
-                                    i += 2;
-                                    if (lines[i] === '20') y = parseFloat(lines[i + 1]);
-                                    currentShape.points.push(`${x},${y}`);
-                                    i++;
-                                }
-                            }
-                            i++;
-                        }
-                        shapes.push({ type: 'polygon', points: currentShape.points.join(' ') });
-                    } else if (lines[i + 1] === 'LINE') {
-                        currentShape = { type: 'polygon', points: [] };
-                        i += 2;
-                        while (i < lines.length && lines[i] !== '0') {
-                            if (lines[i] === '10') currentShape.points[0] = parseFloat(lines[i + 1]);
-                            if (lines[i] === '20') currentShape.points[1] = parseFloat(lines[i + 1]);
-                            if (lines[i] === '11') currentShape.points[2] = parseFloat(lines[i + 1]);
-                            if (lines[i] === '21') currentShape.points[3] = parseFloat(lines[i + 1]);
-                            i++;
-                        }
-                        shapes.push({ type: 'polygon', points: `${currentShape.points[0]},${currentShape.points[1]} ${currentShape.points[2]},${currentShape.points[3]}` });
                     }
+                    if (shape.points.length > 0) currentBlock.shapes.push(shape);
+                }
+                if (inBlocks && lines[i] === '0' && lines[i + 1] === 'ENDBLK') {
+                    if (currentBlock && currentBlock.name) blocks[currentBlock.name] = currentBlock.shapes;
+                    currentBlock = null;
+                    i++;
+                }
+                if (inBlocks && lines[i] === '0' && lines[i + 1] === 'ENDSEC') {
+                    inBlocks = false;
+                    i++;
+                }
+
+                // Секция ENTITIES
+                if (lines[i] === '2' && lines[i + 1] === 'ENTITIES') {
+                    inEntities = true;
+                    console.log('Entities section found');
+                    i++;
+                    continue;
+                }
+                if (inEntities && lines[i] === '0' && lines[i + 1] === 'INSERT') {
+                    let insert = { blockName: '', x: 0, y: 0 };
+                    i += 2;
+                    while (i < lines.length && lines[i] !== '0') {
+                        if (lines[i] === '2') insert.blockName = lines[i + 1];
+                        if (lines[i] === '10') insert.x = parseFloat(lines[i + 1]);
+                        if (lines[i] === '20') insert.y = parseFloat(lines[i + 1]);
+                        i++;
+                    }
+                    if (blocks[insert.blockName]) {
+                        blocks[insert.blockName].forEach(blockShape => {
+                            let shape = { ...blockShape, points: blockShape.points.map(p => {
+                                const [x, y] = p.split(',').map(Number);
+                                return `${x + insert.x},${y + insert.y}`;
+                            }).join(' ') };
+                            shapes.push(shape);
+                        });
+                    }
+                }
+                if (inEntities && lines[i] === '0' && lines[i + 1] === 'ENDSEC') {
+                    inEntities = false;
+                    break;
                 }
             }
             return shapes;
