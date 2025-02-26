@@ -150,7 +150,8 @@
             <button onclick="setShape('circle')">Круг</button>
             <button onclick="setShape('star')">Звезда</button>
             <button onclick="setShape('triangle')">Треугольник</button>
-            <input type="file" id="dxfUpload" accept=".dxf" onchange="loadDXF(event)">
+            <button onclick="setShape('customShape0')">Фигура 1 из DXF</button>
+            <button onclick="setShape('customShape1')">Фигура 2 из DXF</button>
         </div>
         <div class="controls">
             <div>
@@ -190,7 +191,15 @@
             rect: { type: 'rect', x: 50, y: 50, width: 'width', height: 'height' },
             circle: { type: 'circle', cx: 100, cy: 100, r: 'width / 2' },
             star: { type: 'polygon', points: (width, height) => generateStarPoints(100, 100, width / 2, height / 2, 5) },
-            triangle: { type: 'polygon', points: '50,50 100,150 150,50' }
+            triangle: { type: 'polygon', points: '50,50 100,150 150,50' },
+            customShape0: { 
+                type: 'polygon', 
+                points: '152.682614,-37.066822 152.682614,37.066822 -152.682614,37.066822 -152.682614,-37.066822' 
+            },
+            customShape1: { 
+                type: 'polygon', 
+                points: '152.682614,-37.066822 152.682614,37.066822 -152.682614,37.066822 -152.682614,-37.066822' 
+            }
         };
 
         function drawGrid() {
@@ -327,179 +336,6 @@
         svg.addEventListener('touchend', () => { isDragging = false; });
 
         document.getElementById('color').addEventListener('change', drawShapes);
-
-        function loadDXF(event) {
-            console.log('File input changed');
-            const file = event.target.files[0];
-            if (!file) {
-                console.log('No file selected');
-                return;
-            }
-            console.log('File selected:', file.name);
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                console.log('File loaded, content length:', e.target.result.length);
-                const shapes = parseDXFManual(e.target.result);
-                console.log('Shapes extracted:', shapes);
-                integrateShapes(shapes);
-            };
-            reader.onerror = function() {
-                console.error('Error reading file');
-            };
-            reader.readAsText(file);
-        }
-
-        function parseDXFManual(dxfContent) {
-            const lines = dxfContent.split('\n').map(line => line.trim());
-            const shapes = [];
-            const blocks = {};
-            let currentBlock = null;
-            let inBlocks = false;
-            let inEntities = false;
-
-            console.log('Starting DXF parsing...');
-            for (let i = 0; i < lines.length; i++) {
-                // Секция BLOCKS
-                if (lines[i] === '2' && lines[i + 1] === 'BLOCKS') {
-                    inBlocks = true;
-                    console.log('Blocks section found');
-                    i++;
-                    continue;
-                }
-                if (inBlocks && lines[i] === '0' && lines[i + 1] === 'BLOCK') {
-                    currentBlock = { name: '', shapes: [] };
-                    i += 2;
-                    while (i < lines.length && lines[i] !== '0') {
-                        if (lines[i] === '2') {
-                            currentBlock.name = lines[i + 1];
-                            console.log('Block name:', currentBlock.name);
-                        }
-                        i++;
-                    }
-                }
-                if (inBlocks && lines[i] === '0' && (lines[i + 1] === 'LWPOLYLINE' || lines[i + 1] === 'POLYLINE')) {
-                    let shape = { type: 'polygon', points: [] };
-                    console.log('Found shape in block:', lines[i + 1]);
-                    i += 2;
-                    if (lines[i - 1] === 'LWPOLYLINE') {
-                        let vertexCount = 0;
-                        while (i < lines.length && lines[i] !== '0') {
-                            if (lines[i] === '90') {
-                                vertexCount = parseInt(lines[i + 1]);
-                                console.log('Vertex count:', vertexCount);
-                                i += 2;
-                            }
-                            if (lines[i] === '10' && vertexCount > 0) {
-                                for (let v = 0; v < vertexCount && i < lines.length; v++) {
-                                    let x = parseFloat(lines[i + 1]);
-                                    i += 2;
-                                    let y = parseFloat(lines[i + 1]);
-                                    shape.points.push(`${x},${y}`);
-                                    i += 2;
-                                }
-                            }
-                            i++;
-                        }
-                    } else if (lines[i - 1] === 'POLYLINE') {
-                        while (i < lines.length && !(lines[i] === '0' && lines[i + 1] === 'SEQEND')) {
-                            if (lines[i] === '0' && lines[i + 1] === 'VERTEX') {
-                                let vertex = {};
-                                i += 2;
-                                while (i < lines.length && lines[i] !== '0') {
-                                    if (lines[i] === '10') vertex.x = parseFloat(lines[i + 1]);
-                                    if (lines[i] === '20') vertex.y = parseFloat(lines[i + 1]);
-                                    i++;
-                                }
-                                shape.points.push(`${vertex.x},${vertex.y}`);
-                            }
-                            i++;
-                        }
-                        i++; // Пропускаем SEQEND
-                    }
-                    if (shape.points.length > 0) {
-                        console.log('Shape added to block:', shape);
-                        currentBlock.shapes.push(shape);
-                    }
-                }
-                if (inBlocks && lines[i] === '0' && lines[i + 1] === 'ENDBLK') {
-                    if (currentBlock && currentBlock.name) {
-                        blocks[currentBlock.name] = currentBlock.shapes;
-                        console.log('Block saved:', currentBlock.name, blocks[currentBlock.name]);
-                    }
-                    currentBlock = null;
-                    i++;
-                }
-                if (inBlocks && lines[i] === '0' && lines[i + 1] === 'ENDSEC') {
-                    inBlocks = false;
-                    console.log('Blocks section ended');
-                    i++;
-                }
-
-                // Секция ENTITIES
-                if (lines[i] === '2' && lines[i + 1] === 'ENTITIES') {
-                    inEntities = true;
-                    console.log('Entities section found');
-                    i++;
-                    continue;
-                }
-                if (inEntities && lines[i] === '0' && lines[i + 1] === 'INSERT') {
-                    let insert = { blockName: '', x: 0, y: 0 };
-                    i += 2;
-                    while (i < lines.length && lines[i] !== '0') {
-                        if (lines[i] === '2') insert.blockName = lines[i + 1];
-                        if (lines[i] === '10') insert.x = parseFloat(lines[i + 1]);
-                        if (lines[i] === '20') insert.y = parseFloat(lines[i + 1]);
-                        i++;
-                    }
-                    if (blocks[insert.blockName]) {
-                        console.log('Insert found:', insert);
-                        blocks[insert.blockName].forEach(blockShape => {
-                            let shape = { 
-                                type: blockShape.type, 
-                                points: blockShape.points.map(p => {
-                                    const [x, y] = p.split(',').map(Number);
-                                    return `${x + insert.x},${y + insert.y}`;
-                                }).join(' ') 
-                            };
-                            shapes.push(shape);
-                        });
-                    }
-                }
-                if (inEntities && lines[i] === '0' && lines[i + 1] === 'ENDSEC') {
-                    inEntities = false;
-                    console.log('Entities section ended');
-                    i++;
-                }
-            }
-            return shapes;
-        }
-
-        function integrateShapes(shapes) {
-            console.log('Integrating shapes:', shapes.length);
-            shapes.forEach((shape, index) => {
-                const shapeName = `customShape${index}`;
-                if (shape.type === 'circle') {
-                    shapeLibrary[shapeName] = {
-                        type: 'circle',
-                        cx: shape.cx,
-                        cy: shape.cy,
-                        r: shape.r
-                    };
-                } else if (shape.type === 'polygon') {
-                    shapeLibrary[shapeName] = {
-                        type: 'polygon',
-                        points: shape.points
-                    };
-                }
-                const button = document.createElement('button');
-                button.textContent = shapeName;
-                button.onclick = () => setShape(shapeName);
-                document.querySelector('.toolbar').appendChild(button);
-                console.log('Button added:', shapeName);
-            });
-            drawShapes();
-        }
 
         drawGrid();
         drawShapes();
