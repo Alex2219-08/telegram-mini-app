@@ -371,26 +371,32 @@
                     currentBlock = { name: '', shapes: [] };
                     i += 2;
                     while (i < lines.length && lines[i] !== '0') {
-                        if (lines[i] === '2') currentBlock.name = lines[i + 1];
+                        if (lines[i] === '2') {
+                            currentBlock.name = lines[i + 1];
+                            console.log('Block name:', currentBlock.name);
+                        }
                         i++;
                     }
                 }
                 if (inBlocks && lines[i] === '0' && (lines[i + 1] === 'LWPOLYLINE' || lines[i + 1] === 'POLYLINE')) {
                     let shape = { type: 'polygon', points: [] };
+                    console.log('Found shape in block:', lines[i + 1]);
                     i += 2;
                     if (lines[i - 1] === 'LWPOLYLINE') {
+                        let vertexCount = 0;
                         while (i < lines.length && lines[i] !== '0') {
-                            if (lines[i] === '90') { // Количество вершин
-                                const vertexCount = parseInt(lines[i + 1]);
+                            if (lines[i] === '90') {
+                                vertexCount = parseInt(lines[i + 1]);
+                                console.log('Vertex count:', vertexCount);
                                 i += 2;
+                            }
+                            if (lines[i] === '10' && vertexCount > 0) {
                                 for (let v = 0; v < vertexCount && i < lines.length; v++) {
-                                    let x = 0, y = 0;
-                                    while (i < lines.length && lines[i] !== '0' && lines[i] !== '10') i++;
-                                    if (lines[i] === '10') x = parseFloat(lines[i + 1]);
+                                    let x = parseFloat(lines[i + 1]);
                                     i += 2;
-                                    if (lines[i] === '20') y = parseFloat(lines[i + 1]);
+                                    let y = parseFloat(lines[i + 1]);
                                     shape.points.push(`${x},${y}`);
-                                    i++;
+                                    i += 2;
                                 }
                             }
                             i++;
@@ -411,15 +417,22 @@
                         }
                         i++; // Пропускаем SEQEND
                     }
-                    if (shape.points.length > 0) currentBlock.shapes.push(shape);
+                    if (shape.points.length > 0) {
+                        console.log('Shape added to block:', shape);
+                        currentBlock.shapes.push(shape);
+                    }
                 }
                 if (inBlocks && lines[i] === '0' && lines[i + 1] === 'ENDBLK') {
-                    if (currentBlock && currentBlock.name) blocks[currentBlock.name] = currentBlock.shapes;
+                    if (currentBlock && currentBlock.name) {
+                        blocks[currentBlock.name] = currentBlock.shapes;
+                        console.log('Block saved:', currentBlock.name, blocks[currentBlock.name]);
+                    }
                     currentBlock = null;
                     i++;
                 }
                 if (inBlocks && lines[i] === '0' && lines[i + 1] === 'ENDSEC') {
                     inBlocks = false;
+                    console.log('Blocks section ended');
                     i++;
                 }
 
@@ -440,6 +453,7 @@
                         i++;
                     }
                     if (blocks[insert.blockName]) {
+                        console.log('Insert found:', insert);
                         blocks[insert.blockName].forEach(blockShape => {
                             let shape = { 
                                 type: blockShape.type, 
@@ -454,6 +468,7 @@
                 }
                 if (inEntities && lines[i] === '0' && lines[i + 1] === 'ENDSEC') {
                     inEntities = false;
+                    console.log('Entities section ended');
                     i++;
                 }
             }
