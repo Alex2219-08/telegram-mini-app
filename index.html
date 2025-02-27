@@ -152,20 +152,24 @@
 
         function drawGrid() {
             gridGroup.innerHTML = '';
-            const width = svg.getAttribute('width');
-            const height = svg.getAttribute('height');
-            const gridSize = 20 * scale; // Масштабируем размер клеток
-            const canvasWidth = width / scale;
-            const canvasHeight = height / scale;
+            const width = parseInt(svg.getAttribute('width'));
+            const height = parseInt(svg.getAttribute('height'));
+            const gridSize = 20 * scale; // Размер клетки зависит от масштаба
 
-            // Расширяем сетку за пределы видимой области для "бесконечности"
-            const extraCells = 100; // Количество дополнительных клеток за пределами
-            const startX = Math.floor((translateX - canvasWidth) / gridSize) * gridSize - extraCells * gridSize;
-            const startY = Math.floor((translateY - canvasHeight) / gridSize) * gridSize - extraCells * gridSize;
-            const endX = startX + canvasWidth + 2 * extraCells * gridSize;
-            const endY = startY + canvasHeight + 2 * extraCells * gridSize;
+            // Вычисляем видимую область в координатах мира
+            const minX = -translateX / scale;
+            const minY = -translateY / scale;
+            const maxX = (width - translateX) / scale;
+            const maxY = (height - translateY) / scale;
 
-            for (let x = startX; x < endX; x += gridSize) {
+            // Начало и конец сетки с запасом в одну клетку за пределами видимой области
+            const startX = Math.floor(minX / gridSize) * gridSize;
+            const startY = Math.floor(minY / gridSize) * gridSize;
+            const endX = Math.ceil(maxX / gridSize) * gridSize;
+            const endY = Math.ceil(maxY / gridSize) * gridSize;
+
+            // Вертикальные линии
+            for (let x = startX; x <= endX; x += gridSize) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', x);
                 line.setAttribute('y1', startY);
@@ -174,7 +178,9 @@
                 line.setAttribute('class', 'grid-line');
                 gridGroup.appendChild(line);
             }
-            for (let y = startY; y < endY; y += gridSize) {
+
+            // Горизонтальные линии
+            for (let y = startY; y <= endY; y += gridSize) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', startX);
                 line.setAttribute('y1', y);
