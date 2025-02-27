@@ -67,7 +67,7 @@
         }
         #svgCanvas {
             border: 3px solid #dfe6e9;
-            background: #f9f9f9;
+            background: #000000; /* Чёрный фон */
             width: 100%;
             height: 65vh;
             border-radius: 15px;
@@ -77,16 +77,11 @@
         #svgCanvas:active {
             cursor: grabbing;
         }
-        .grid-line {
-            stroke: #b2bec3;
-            stroke-width: 0.8;
-        }
         svg polygon {
-            transition: opacity 0.3s, transform 0.2s;
+            /* Убрана анимация transition */
         }
         svg polygon:hover {
-            opacity: 1;
-            transform: scale(1.05);
+            opacity: 1; /* Только подсвечивание */
             cursor: pointer;
         }
         @media (max-width: 600px) {
@@ -129,10 +124,6 @@
         svg.setAttribute('width', window.innerWidth * 0.9);
         svg.setAttribute('height', window.innerHeight * 0.65);
 
-        const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        gridGroup.setAttribute('id', 'gridGroup');
-        svg.appendChild(gridGroup);
-
         const shapeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         shapeGroup.setAttribute('id', 'shapeGroup');
         svg.appendChild(shapeGroup);
@@ -150,50 +141,9 @@
             }
         };
 
-        function drawGrid() {
-            gridGroup.innerHTML = '';
-            const width = parseInt(svg.getAttribute('width'));
-            const height = parseInt(svg.getAttribute('height'));
-            const gridSize = 20 * scale; // Размер клетки зависит от масштаба
-
-            // Вычисляем видимую область в координатах мира
-            const minX = -translateX / scale;
-            const minY = -translateY / scale;
-            const maxX = (width - translateX) / scale;
-            const maxY = (height - translateY) / scale;
-
-            // Начало и конец сетки с запасом в одну клетку за пределами видимой области
-            const startX = Math.floor(minX / gridSize) * gridSize;
-            const startY = Math.floor(minY / gridSize) * gridSize;
-            const endX = Math.ceil(maxX / gridSize) * gridSize;
-            const endY = Math.ceil(maxY / gridSize) * gridSize;
-
-            // Вертикальные линии
-            for (let x = startX; x <= endX; x += gridSize) {
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', x);
-                line.setAttribute('y1', startY);
-                line.setAttribute('x2', x);
-                line.setAttribute('y2', endY);
-                line.setAttribute('class', 'grid-line');
-                gridGroup.appendChild(line);
-            }
-
-            // Горизонтальные линии
-            for (let y = startY; y <= endY; y += gridSize) {
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', startX);
-                line.setAttribute('y1', y);
-                line.setAttribute('x2', endX);
-                line.setAttribute('y2', y);
-                line.setAttribute('class', 'grid-line');
-                gridGroup.appendChild(line);
-            }
-        }
-
         function drawShapes() {
             shapeGroup.innerHTML = '';
-            const color = '#ff6b6b';
+            const color = '#ff6b6b'; // Цвет заливки фигур
 
             for (const [name, shapeDef] of Object.entries(shapeLibrary)) {
                 let shape = document.createElementNS('http://www.w3.org/2000/svg', shapeDef.type);
@@ -203,7 +153,7 @@
                 }).join(' ');
                 shape.setAttribute('points', points);
                 shape.setAttribute('fill', color);
-                shape.setAttribute('stroke', '#2c3e50');
+                shape.setAttribute('stroke', '#ffffff'); // Белый контур
                 shape.setAttribute('stroke-width', '3');
                 shape.setAttribute('opacity', '0.85');
                 shape.setAttribute('data-name', name);
@@ -223,9 +173,7 @@
 
         function updateTransform() {
             const transform = `translate(${translateX}, ${translateY}) scale(${scale})`;
-            gridGroup.setAttribute('transform', transform);
             shapeGroup.setAttribute('transform', transform);
-            drawGrid(); // Перерисовываем сетку при каждом изменении
         }
 
         svg.addEventListener('mousedown', (e) => {
@@ -285,7 +233,6 @@
                 scale = Math.min(Math.max(0.5, scale), 5);
                 updateTransform();
             }
-            // Без Ctrl прокрутка страницы работает автоматически
         });
 
         svg.addEventListener('touchstart', (e) => {
@@ -313,7 +260,6 @@
             isDraggingCanvas = false;
         });
 
-        drawGrid();
         drawShapes();
         window.Telegram.WebApp.ready();
     </script>
