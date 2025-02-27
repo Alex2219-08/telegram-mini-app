@@ -11,7 +11,6 @@
             margin: 0;
             font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
             color: #2c3e50;
-            overflow: hidden; /* Убираем прокрутку страницы */
         }
         .container {
             max-width: 1000px;
@@ -74,7 +73,6 @@
             border-radius: 15px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             cursor: grab;
-            overflow: hidden; /* Убираем прокрутку внутри SVG */
         }
         #svgCanvas:active {
             cursor: grabbing;
@@ -143,12 +141,12 @@
             customShape0: { 
                 type: 'polygon', 
                 points: '152.682614,-37.066822 152.682614,37.066822 -152.682614,37.066822 -152.682614,-37.066822',
-                xOffset: 0, yOffset: 0 // Для перемещения фигуры
+                xOffset: 0, yOffset: 0
             },
             customShape1: { 
                 type: 'polygon', 
                 points: '152.682614,-37.066822 152.682614,37.066822 -152.682614,37.066822 -152.682614,-37.066822',
-                xOffset: 0, yOffset: 0 // Для перемещения фигуры
+                xOffset: 0, yOffset: 0
             }
         };
 
@@ -156,22 +154,31 @@
             gridGroup.innerHTML = '';
             const width = svg.getAttribute('width');
             const height = svg.getAttribute('height');
-            const gridSize = 20;
+            const gridSize = 20 * scale; // Масштабируем размер клеток
+            const canvasWidth = width / scale;
+            const canvasHeight = height / scale;
 
-            for (let x = -translateX % gridSize; x < width; x += gridSize) {
+            // Расширяем сетку за пределы видимой области для "бесконечности"
+            const extraCells = 100; // Количество дополнительных клеток за пределами
+            const startX = Math.floor((translateX - canvasWidth) / gridSize) * gridSize - extraCells * gridSize;
+            const startY = Math.floor((translateY - canvasHeight) / gridSize) * gridSize - extraCells * gridSize;
+            const endX = startX + canvasWidth + 2 * extraCells * gridSize;
+            const endY = startY + canvasHeight + 2 * extraCells * gridSize;
+
+            for (let x = startX; x < endX; x += gridSize) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', x);
-                line.setAttribute('y1', 0);
+                line.setAttribute('y1', startY);
                 line.setAttribute('x2', x);
-                line.setAttribute('y2', height);
+                line.setAttribute('y2', endY);
                 line.setAttribute('class', 'grid-line');
                 gridGroup.appendChild(line);
             }
-            for (let y = -translateY % gridSize; y < height; y += gridSize) {
+            for (let y = startY; y < endY; y += gridSize) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', 0);
+                line.setAttribute('x1', startX);
                 line.setAttribute('y1', y);
-                line.setAttribute('x2', width);
+                line.setAttribute('x2', endX);
                 line.setAttribute('y2', y);
                 line.setAttribute('class', 'grid-line');
                 gridGroup.appendChild(line);
@@ -180,7 +187,7 @@
 
         function drawShapes() {
             shapeGroup.innerHTML = '';
-            const color = '#ff6b6b'; // Фиксированный цвет для простоты
+            const color = '#ff6b6b';
 
             for (const [name, shapeDef] of Object.entries(shapeLibrary)) {
                 let shape = document.createElementNS('http://www.w3.org/2000/svg', shapeDef.type);
@@ -193,7 +200,7 @@
                 shape.setAttribute('stroke', '#2c3e50');
                 shape.setAttribute('stroke-width', '3');
                 shape.setAttribute('opacity', '0.85');
-                shape.setAttribute('data-name', name); // Для идентификации
+                shape.setAttribute('data-name', name);
                 shapeGroup.appendChild(shape);
             }
 
@@ -209,18 +216,19 @@
         function zoomOut() { scale /= 1.2; updateTransform(); }
 
         function updateTransform() {
-            gridGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
-            shapeGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
-            drawGrid(); // Перерисовываем сетку при масштабировании
+            const transform = `translate(${translateX}, ${translateY}) scale(${scale})`;
+            gridGroup.setAttribute('transform', transform);
+            shapeGroup.setAttribute('transform', transform);
+            drawGrid(); // Перерисовываем сетку при каждом изменении
         }
 
         svg.addEventListener('mousedown', (e) => {
-            if (e.button === 1) { // Средняя кнопка (колесико) — перемещение полотна
+            if (e.button === 1) { // Средняя кнопка — перемещение полотна
                 isDraggingCanvas = true;
                 startX = e.clientX;
                 startY = e.clientY;
                 e.preventDefault();
-            } else if (e.button === 0) { // Левая кнопка — выбор и перемещение фигуры
+            } else if (e.button === 0) { // Левая кнопка — перемещение фигуры
                 const target = e.target;
                 if (target.tagName === 'polygon') {
                     isDraggingShape = true;
@@ -242,7 +250,7 @@
                 startY = e.clientY;
                 updateTransform();
             } else if (isDraggingShape && selectedShape) {
-                const dx = (e.clientX - startX) / scale; // Учитываем масштаб
+                const dx = (e.clientX - startX) / scale;
                 const dy = (e.clientY - startY) / scale;
                 shapeLibrary[selectedShape].xOffset += dx;
                 shapeLibrary[selectedShape].yOffset += dy;
@@ -265,12 +273,13 @@
         });
 
         svg.addEventListener('wheel', (e) => {
-            if (e.ctrlKey) {
+            if (e.ctrlKey) { // Масштабирование только с Ctrl
                 e.preventDefault();
                 scale += e.deltaY * -0.01;
                 scale = Math.min(Math.max(0.5, scale), 5);
                 updateTransform();
             }
+            // Без Ctrl прокрутка страницы работает автоматически
         });
 
         svg.addEventListener('touchstart', (e) => {
