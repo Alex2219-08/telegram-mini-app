@@ -18,7 +18,7 @@
             padding: 25px;
             background: rgba(255, 255, 255, 0.9);
             border-radius: 20px;
-            box-shadow: 0 8px 16x rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
             animation: fadeIn 0.5s ease-in;
         }
         @keyframes fadeIn {
@@ -170,11 +170,11 @@
         }
 
         function zoomIn() { 
-            scale *= 1.2; 
+            scale *= 1.2; // Бесконечное масштабирование для кнопок
             updateTransform(); 
         }
         function zoomOut() { 
-            scale /= 1.2; 
+            scale /= 1.2; // Бесконечное масштабирование для кнопок
             updateTransform(); 
         }
 
@@ -234,7 +234,7 @@
         });
 
         svg.addEventListener('wheel', (e) => {
-            // Масштабирование колёсиком без Ctrl внутри SVG
+            // Масштабирование колёсиком без Ctrl внутри SVG, бесконечное
             e.preventDefault();
             scale += e.deltaY * -0.01;
             updateTransform();
@@ -271,6 +271,7 @@
                 if (pinchStartDistance > 0) {
                     const scaleChange = pinchDistance / pinchStartDistance;
                     scale *= scaleChange;
+                    // Бесконечное масштабирование для тачскрина
                     pinchStartDistance = pinchDistance;
                     updateTransform();
                 }
