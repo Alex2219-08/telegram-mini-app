@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"> <!-- Отключение кэша -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Geometric Drawing</title>
@@ -240,8 +240,11 @@
         svg.addEventListener('wheel', (e) => {
             // Масштабирование колёсиком без Ctrl внутри SVG, бесконечное
             e.preventDefault();
-            const scaleFactor = 1 + e.deltaY * -0.01;
-            scale *= scaleFactor;
+            if (e.deltaY > 0) {
+                scale /= 1.1; // Уменьшение масштаба
+            } else if (e.deltaY < 0) {
+                scale *= 1.1; // Увеличение масштаба
+            }
             if (scale < 0.0001) scale = 0.0001; // Минимум для предотвращения исчезновения
             updateTransform();
             console.log('Wheel scale:', scale); // Отладка
