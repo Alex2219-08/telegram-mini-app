@@ -140,7 +140,6 @@
 
         function drawShapes() {
             shapeGroup.innerHTML = '';
-            const color = '#ff6b6b';
 
             for (const [name, shapeDef] of Object.entries(shapeLibrary)) {
                 let shape = document.createElementNS('http://www.w3.org/2000/svg', shapeDef.type);
@@ -149,9 +148,9 @@
                     return `${x + shapeDef.xOffset},${y + shapeDef.yOffset}`;
                 }).join(' ');
                 shape.setAttribute('points', points);
-                shape.setAttribute('fill', color);
-                shape.setAttribute('stroke', '#ffffff');
-                shape.setAttribute('stroke-width', '3');
+                shape.setAttribute('fill', 'none'); // Без заливки
+                shape.setAttribute('stroke', '#ffffff'); // Белый контур
+                shape.setAttribute('stroke-width', '1'); // Тонкая линия (1px для видимости)
                 shape.setAttribute('opacity', '0.85');
                 shape.setAttribute('data-name', name);
                 shapeGroup.appendChild(shape);
