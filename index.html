@@ -238,6 +238,7 @@
             e.preventDefault();
             scale += e.deltaY * -0.01;
             updateTransform();
+            console.log('Wheel scale:', scale); // Отладка
         });
 
         // Тачскрин для перемещения (один палец) и масштабирования (два пальца)
