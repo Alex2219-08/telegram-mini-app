@@ -76,7 +76,7 @@
             cursor: grabbing;
         }
         svg polygon {
-            /* Без анимации */
+            vector-effect: non-scaling-stroke; /* Толщина линий не масштабируется */
         }
         svg polygon:hover {
             opacity: 1;
@@ -118,7 +118,7 @@
         let translateX = 0, translateY = 0;
         let selectedShape = null;
         let pinchStartDistance = 0;
-        let pinchStartCenter = { x: 0, y: 0 }; // Добавлено для центрирования на тачскрине
+        let pinchStartCenter = { x: 0, y: 0 }; // Для центрирования на тачскрине
 
         svg.setAttribute('width', window.innerWidth * 0.9);
         svg.setAttribute('height', window.innerHeight * 0.65);
@@ -157,7 +157,8 @@
             shape.setAttribute('points', points);
             shape.setAttribute('fill', 'none'); // Без заливки
             shape.setAttribute('stroke', '#ffffff'); // Белый контур
-            shape.setAttribute('stroke-width', '1'); // Тонкая линия (1px для видимости)
+            shape.setAttribute('stroke-width', '1'); // Минимальная толщина — 1 пиксель
+            shape.setAttribute('vector-effect', 'non-scaling-stroke'); // Фиксированная толщина линий
             shape.setAttribute('opacity', '0.85');
             shape.setAttribute('data-name', currentShape);
             shapeGroup.appendChild(shape);
@@ -225,7 +226,7 @@
             selectedShape = null;
         });
 
-        // Обновленный обработчик wheel с центрированием под курсором
+        // Обработчик wheel с центрированием под курсором
         svg.addEventListener('wheel', (e) => {
             e.preventDefault();
             const svgRect = svg.getBoundingClientRect();
@@ -247,7 +248,7 @@
             updateTransform();
         });
 
-        // Обновленный обработчик touchstart для тачскрина
+        // Обработчик touchstart для тачскрина
         svg.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isDraggingCanvas = true;
@@ -266,7 +267,7 @@
             }
         });
 
-        // Обновленный обработчик touchmove с центрированием между пальцами
+        // Обработчик touchmove с центрированием между пальцами
         svg.addEventListener('touchmove', (e) => {
             if (isDraggingCanvas && e.touches.length === 1) {
                 const dx = e.touches[0].clientX - startX;
