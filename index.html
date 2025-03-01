@@ -63,11 +63,6 @@
         button:active {
             transform: scale(0.95);
         }
-        .zoom {
-            width: 50px;
-            font-size: 20px;
-            background: linear-gradient(145deg, #74b9ff, #0984e3);
-        }
         #svgCanvas {
             border: 3px solid #dfe6e9;
             background: #000000;
@@ -109,8 +104,6 @@
         <div class="toolbar">
             <button onclick="setShape('customShape0')">Фигура 1 из DXF</button>
             <button onclick="setShape('customShape1')">Фигура 2 из DXF</button>
-            <button onclick="zoomIn()" class="zoom">+</button>
-            <button onclick="zoomOut()" class="zoom">-</button>
         </div>
         <svg id="svgCanvas"></svg>
     </div>
@@ -170,16 +163,6 @@
         function setShape(shape) {
             currentShape = shape;
             drawShapes();
-        }
-
-        function zoomIn() { 
-            scale *= 1.2; // Бесконечное масштабирование для кнопок
-            updateTransform(); 
-        }
-        function zoomOut() { 
-            scale /= 1.2; // Бесконечное масштабирование для кнопок
-            if (scale < 0.0001) scale = 0.0001; // Минимум для предотвращения исчезновения
-            updateTransform(); 
         }
 
         function updateTransform() {
