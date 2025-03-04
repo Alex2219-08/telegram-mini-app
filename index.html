@@ -8,6 +8,8 @@
     <meta http-equiv="Expires" content="0">
     <title>Geometric Drawing</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Подключение библиотеки dxf-parser через CDN -->
+    <script src="https://cdn.jsdelivr.net/gh/gdsestimating/dxf-parser@master/dist/dxf-parser.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #a1c4fd);
@@ -75,7 +77,7 @@
         #svgCanvas:active {
             cursor: grabbing;
         }
-        svg polygon {
+        svg polygon, svg line, svg circle {
             vector-effect: non-scaling-stroke; /* Толщина линий не масштабируется */
         }
         svg polygon:hover {
@@ -105,6 +107,8 @@
             <button onclick="setShape('customShape0')">Фигура 1 из DXF</button>
             <button onclick="setShape('customShape1')">Фигура 2 из DXF</button>
             <button onclick="setShape('train')">Поезд</button>
+            <!-- Добавлен input для загрузки DXF-файлов -->
+            <input type="file" id="dxfUpload" accept=".dxf" onchange="loadDXF(event)">
         </div>
         <svg id="svgCanvas"></svg>
     </div>
@@ -118,7 +122,7 @@
         let translateX = 0, translateY = 0;
         let selectedShape = null;
         let pinchStartDistance = 0;
-        let pinchStartCenter = { x: 0, y: 0 }; // Для центрирования на тачскрине
+        let pinchStartCenter = { x: 0, y: 0 };
 
         svg.setAttribute('width', window.innerWidth * 0.9);
         svg.setAttribute('height', window.innerHeight * 0.65);
@@ -155,10 +159,10 @@
                 return `${x + shapeDef.xOffset},${y + shapeDef.yOffset}`;
             }).join(' ');
             shape.setAttribute('points', points);
-            shape.setAttribute('fill', 'none'); // Без заливки
-            shape.setAttribute('stroke', '#ffffff'); // Белый контур
-            shape.setAttribute('stroke-width', '1'); // Минимальная толщина — 1 пиксель
-            shape.setAttribute('vector-effect', 'non-scaling-stroke'); // Фиксированная толщина линий
+            shape.setAttribute('fill', 'none');
+            shape.setAttribute('stroke', '#ffffff');
+            shape.setAttribute('stroke-width', '1');
+            shape.setAttribute('vector-effect', 'non-scaling-stroke');
             shape.setAttribute('opacity', '0.85');
             shape.setAttribute('data-name', currentShape);
             shapeGroup.appendChild(shape);
@@ -171,18 +175,73 @@
             drawShapes();
         }
 
+        // Новая функция для загрузки и отображения DXF-файлов
+        function loadDXF(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dxfContent = e.target.result;
+                const parser = new DxfParser();
+                try {
+                    const dxf = parser.parseSync(dxfContent);
+                    shapeGroup.innerHTML = ''; // Очищаем текущие фигуры
+
+                    dxf.entities.forEach(entity => {
+                        if (entity.type === 'LINE') {
+                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            line.setAttribute('x1', entity.start.x);
+                            line.setAttribute('y1', entity.start.y);
+                            line.setAttribute('x2', entity.end.x);
+                            line.setAttribute('y2', entity.end.y);
+                            line.setAttribute('stroke', '#ffffff');
+                            line.setAttribute('stroke-width', '1');
+                            line.setAttribute('vector-effect', 'non-scaling-stroke');
+                            shapeGroup.appendChild(line);
+                        } else if (entity.type === 'CIRCLE') {
+                            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                            circle.setAttribute('cx', entity.center.x);
+                            circle.setAttribute('cy', entity.center.y);
+                            circle.setAttribute('r', entity.radius);
+                            circle.setAttribute('fill', 'none');
+                            circle.setAttribute('stroke', '#ffffff');
+                            circle.setAttribute('stroke-width', '1');
+                            circle.setAttribute('vector-effect', 'non-scaling-stroke');
+                            shapeGroup.appendChild(circle);
+                        } else if (entity.type === 'POLYLINE' || entity.type === 'LWPOLYLINE') {
+                            const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                            const points = entity.vertices.map(v => `${v.x},${v.y}`).join(' ');
+                            polyline.setAttribute('points', points);
+                            polyline.setAttribute('fill', 'none');
+                            polyline.setAttribute('stroke', '#ffffff');
+                            polyline.setAttribute('stroke-width', '1');
+                            polyline.setAttribute('vector-effect', 'non-scaling-stroke');
+                            shapeGroup.appendChild(polyline);
+                        }
+                        // Можно добавить поддержку других типов (ARC и т.д.), если нужно
+                    });
+                    updateTransform();
+                } catch (error) {
+                    console.error('Ошибка парсинга DXF:', error);
+                    alert('Не удалось загрузить DXF-файл. Проверьте формат файла.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function updateTransform() {
             const transform = `translate(${translateX}, ${translateY}) scale(${scale})`;
             shapeGroup.setAttribute('transform', transform);
         }
 
         svg.addEventListener('mousedown', (e) => {
-            if (e.button === 1) { // Средняя кнопка — перемещение полотна
+            if (e.button === 1) {
                 isDraggingCanvas = true;
                 startX = e.clientX;
                 startY = e.clientY;
                 e.preventDefault();
-            } else if (e.button === 0) { // Левая кнопка — перемещение фигуры
+            } else if (e.button === 0) {
                 const target = e.target;
                 if (target.tagName === 'polygon') {
                     isDraggingShape = true;
@@ -226,7 +285,6 @@
             selectedShape = null;
         });
 
-        // Обработчик wheel с центрированием под курсором
         svg.addEventListener('wheel', (e) => {
             e.preventDefault();
             const svgRect = svg.getBoundingClientRect();
@@ -235,9 +293,9 @@
             const oldScale = scale;
 
             if (e.deltaY > 0) {
-                scale *= 0.9; // Уменьшение (отдаление)
+                scale *= 0.9;
             } else if (e.deltaY < 0) {
-                scale *= 1.1; // Увеличение (приближение)
+                scale *= 1.1;
             }
             if (scale < 0.0001) scale = 0.0001;
 
@@ -248,7 +306,6 @@
             updateTransform();
         });
 
-        // Обработчик touchstart для тачскрина
         svg.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isDraggingCanvas = true;
@@ -267,7 +324,6 @@
             }
         });
 
-        // Обработчик touchmove с центрированием между пальцами
         svg.addEventListener('touchmove', (e) => {
             if (isDraggingCanvas && e.touches.length === 1) {
                 const dx = e.touches[0].clientX - startX;
