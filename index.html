@@ -8,8 +8,8 @@
     <meta http-equiv="Expires" content="0">
     <title>Geometric Drawing</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключение локальной библиотеки dxf-parser -->
-    <script src="js/dxf-parser.js"></script>
+    <!-- Подключение только dxf-viewer.js -->
+    <script src="js/dxf-viewer.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #a1c4fd);
@@ -78,7 +78,7 @@
             cursor: grabbing;
         }
         svg polygon, svg line, svg circle {
-            vector-effect: non-scaling-stroke; /* Толщина линий не масштабируется */
+            vector-effect: non-scaling-stroke;
         }
         svg polygon:hover {
             opacity: 1;
@@ -107,7 +107,6 @@
             <button onclick="setShape('customShape0')">Фигура 1 из DXF</button>
             <button onclick="setShape('customShape1')">Фигура 2 из DXF</button>
             <button onclick="setShape('train')">Поезд</button>
-            <!-- Добавлен input для загрузки DXF-файлов -->
             <input type="file" id="dxfUpload" accept=".dxf" onchange="loadDXF(event)">
         </div>
         <svg id="svgCanvas"></svg>
@@ -175,7 +174,7 @@
             drawShapes();
         }
 
-        // Функция для загрузки и отображения DXF-файлов
+        // Функция для загрузки DXF-файлов с использованием dxf-viewer.js
         function loadDXF(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -183,48 +182,9 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const dxfContent = e.target.result;
-                const parser = new DxfParser();
-                try {
-                    const dxf = parser.parseSync(dxfContent);
-                    shapeGroup.innerHTML = ''; // Очищаем текущие фигуры
-
-                    dxf.entities.forEach(entity => {
-                        if (entity.type === 'LINE') {
-                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                            line.setAttribute('x1', entity.start.x);
-                            line.setAttribute('y1', entity.start.y);
-                            line.setAttribute('x2', entity.end.x);
-                            line.setAttribute('y2', entity.end.y);
-                            line.setAttribute('stroke', '#ffffff');
-                            line.setAttribute('stroke-width', '1');
-                            line.setAttribute('vector-effect', 'non-scaling-stroke');
-                            shapeGroup.appendChild(line);
-                        } else if (entity.type === 'CIRCLE') {
-                            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                            circle.setAttribute('cx', entity.center.x);
-                            circle.setAttribute('cy', entity.center.y);
-                            circle.setAttribute('r', entity.radius);
-                            circle.setAttribute('fill', 'none');
-                            circle.setAttribute('stroke', '#ffffff');
-                            circle.setAttribute('stroke-width', '1');
-                            circle.setAttribute('vector-effect', 'non-scaling-stroke');
-                            shapeGroup.appendChild(circle);
-                        } else if (entity.type === 'POLYLINE' || entity.type === 'LWPOLYLINE') {
-                            const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-                            const points = entity.vertices.map(v => `${v.x},${v.y}`).join(' ');
-                            polyline.setAttribute('points', points);
-                            polyline.setAttribute('fill', 'none');
-                            polyline.setAttribute('stroke', '#ffffff');
-                            polyline.setAttribute('stroke-width', '1');
-                            polyline.setAttribute('vector-effect', 'non-scaling-stroke');
-                            shapeGroup.appendChild(polyline);
-                        }
-                    });
-                    updateTransform();
-                } catch (error) {
-                    console.error('Ошибка парсинга DXF:', error);
-                    alert('Не удалось загрузить DXF-файл. Проверьте формат файла.');
-                }
+                const container = document.getElementById('svgCanvas');
+                const viewer = new DxfViewer.Viewer(container); // Предполагаемый класс из dxf-viewer.js
+                viewer.Load({ url: URL.createObjectURL(file) }); // Загрузка файла через URL
             };
             reader.readAsText(file);
         }
@@ -234,13 +194,14 @@
             shapeGroup.setAttribute('transform', transform);
         }
 
+        // Обработчики событий для мыши
         svg.addEventListener('mousedown', (e) => {
-            if (e.button === 1) {
+            if (e.button === 1) { // Средняя кнопка — перемещение полотна
                 isDraggingCanvas = true;
                 startX = e.clientX;
                 startY = e.clientY;
                 e.preventDefault();
-            } else if (e.button === 0) {
+            } else if (e.button === 0) { // Левая кнопка — перемещение фигуры
                 const target = e.target;
                 if (target.tagName === 'polygon') {
                     isDraggingShape = true;
@@ -305,6 +266,7 @@
             updateTransform();
         });
 
+        // Обработчики событий для тач-устройств
         svg.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 isDraggingCanvas = true;
@@ -362,6 +324,15 @@
 
         drawShapes();
         window.Telegram.WebApp.ready();
+    </script>
+    <script>
+        window.addEventListener('load', () => {
+            if (typeof DxfViewer !== 'undefined') {
+                console.log('DxfViewer загружен');
+            } else {
+                console.log('DxfViewer не загружен');
+            }
+        });
     </script>
 </body>
 </html>
