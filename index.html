@@ -1,141 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Geometric Drawing</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключение dxf-viewer.js -->
-    <script src="js/dxf-viewer.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #a1c4fd);
-            margin: 0;
-            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
-            color: #2c3e50;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 25px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            animation: fadeIn 0.5s ease-in;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-            font-size: 28px;
-            font-weight: 700;
-            color: #e84393;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-        }
-        .toolbar {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            overflow-x: auto;
-        }
-        button {
-            padding: 12px 25px;
-            background: linear-gradient(145deg, #ff6b6b, #e84393);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.3s;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        #dxfViewer {
-            border: 3px solid #dfe6e9;
-            background: #000000;
-            width: 100%;
-            height: 65vh;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            cursor: grab;
-        }
-        #dxfViewer:active {
-            cursor: grabbing;
-        }
-        @media (max-width: 600px) {
-            .container {
-                margin: 10px;
-                padding: 15px;
-            }
-            .toolbar {
-                flex-direction: column;
-                gap: 15px;
-            }
-            button {
-                width: 100%;
-                max-width: 220px;
-            }
-        }
-    </style>
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DXF Viewer</title>
+  <style>
+    #dxfViewer {
+      width: 100%;
+      height: 65vh;
+      background: #000000;
+    }
+  </style>
+<script defer src="bundle.js"></script></head>
 <body>
-    <div class="container">
-        <div class="header">Рисование фигур</div>
-        <div class="toolbar">
-            <input type="file" id="dxfUpload" accept=".dxf" onchange="loadDXF(event)">
-        </div>
-        <div id="dxfViewer"></div>
-    </div>
-    <script>
-        let viewer;
-
-        // Функция для загрузки DXF-файлов с использованием dxf-viewer.js
-        function loadDXF(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const dxfContent = e.target.result;
-                const container = document.getElementById('dxfViewer');
-                viewer = new DxfViewer.Viewer(container, {
-                    clearBackground: true,
-                    clearColor: 0x000000,
-                    clearAlpha: 1.0
-                });
-                viewer.Load({
-                    url: URL.createObjectURL(file),
-                    content: dxfContent
-                });
-            };
-            reader.readAsText(file);
-        }
-
-        // Проверка загрузки библиотеки
-        window.addEventListener('load', () => {
-            if (typeof DxfViewer !== 'undefined') {
-                console.log('DxfViewer загружен');
-            } else {
-                console.log('DxfViewer не загружен');
-            }
-        });
-
-        window.Telegram.WebApp.ready();
-    </script>
+  <input type="file" id="dxfUpload" accept=".dxf">
+  <div id="dxfViewer"></div>
+  <!-- HtmlWebpackPlugin автоматически внедрит тег <script> для вашего бандла -->
 </body>
 </html>
